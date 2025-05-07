@@ -28,18 +28,18 @@ class PartialParse(object):
         ### Your code should initialize the following fields:
         ###     self.stack: The current stack represented as a list with the top of the stack as the
         ###                 last element of the list.
-        self.stack = [ROOT]
         ###     self.buffer: The current buffer represented as a list with the first item on the
         ###                  buffer as the first item of the list
-        self.buffer = sentence[:]
         ###     self.dependencies: The list of dependencies produced so far. Represented as a list of
         ###             tuples where each tuple is of the form (head, dependent).
         ###             Order for this list doesn't matter.
-        self.dependencies = []
         ### Note: The root token should be represented with the string "ROOT"
         ### Note: If you need to use the sentence object to initialize anything, make sure to not directly 
         ###       reference the sentence object.  That is, remember to NOT modify the sentence object. 
 
+        self.stack = [ROOT]
+        self.buffer = sentence[:]
+        self.dependencies = []
 
         ### END YOUR CODE
 
@@ -52,6 +52,7 @@ class PartialParse(object):
                                 transition is a legal transition.
         """
         ### YOUR CODE HERE (~7-12 Lines)
+
         if transition == SHIFT:
             # Shift: Move the first word from the buffer to the stack
             if self.buffer:
