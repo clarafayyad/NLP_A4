@@ -8,6 +8,12 @@ Authors: Sahil Chopra, Haoshen Hong, Nathan Schneider, Lucia Donatelli
 
 import sys
 
+ROOT = "ROOT"
+
+SHIFT = "S"
+LEFT_ARC = "LA"
+RIGHT_ARC = "RA"
+
 class PartialParse(object):
     def __init__(self, sentence):
         """Initializes this partial parse.
@@ -22,12 +28,14 @@ class PartialParse(object):
         ### Your code should initialize the following fields:
         ###     self.stack: The current stack represented as a list with the top of the stack as the
         ###                 last element of the list.
+        self.stack = [ROOT]
         ###     self.buffer: The current buffer represented as a list with the first item on the
         ###                  buffer as the first item of the list
+        self.buffer = sentence[:]
         ###     self.dependencies: The list of dependencies produced so far. Represented as a list of
         ###             tuples where each tuple is of the form (head, dependent).
         ###             Order for this list doesn't matter.
-        ###
+        self.dependencies = []
         ### Note: The root token should be represented with the string "ROOT"
         ### Note: If you need to use the sentence object to initialize anything, make sure to not directly 
         ###       reference the sentence object.  That is, remember to NOT modify the sentence object. 
@@ -44,13 +52,27 @@ class PartialParse(object):
                                 transition is a legal transition.
         """
         ### YOUR CODE HERE (~7-12 Lines)
-        ### TODO:
-        ###     Implement a single parsing step, i.e. the logic for the following as
-        ###     described in the pdf handout:
-        ###         1. Shift
-        ###         2. Left Arc
-        ###         3. Right Arc
+        if transition == SHIFT:
+            # Shift: Move the first word from the buffer to the stack
+            if self.buffer:
+                word = self.buffer.pop(0)
+                self.stack.append(word)
 
+        elif transition == LEFT_ARC:
+            # Left Arc: Create a dependency (first_word -> second_word) & remove second word from stack
+            if len(self.stack) > 1:  # Make sure there are at least two elements on the stack
+                second_word = self.stack[-2]
+                first_word = self.stack[-1]
+                self.stack.pop(-2)
+                self.dependencies.append((first_word, second_word))
+
+        elif transition == RIGHT_ARC:
+            # Right Arc: Create a dependency (second_word -> first_word) & remove first word from stack
+            if len(self.stack) > 1:
+                second_word = self.stack[-2]
+                first_word = self.stack[-1]
+                self.stack.pop(-1)
+                self.dependencies.append((second_word, first_word))
 
         ### END YOUR CODE
 
@@ -102,6 +124,20 @@ def minibatch_parse(sentences, model, batch_size):
     ###             to remove objects from the `unfinished_parses` list. This will free the underlying memory that
     ###             is being accessed by `partial_parses` and may cause your code to crash.
 
+    partial_parses = [PartialParse(sentence) for sentence in sentences]
+    unfinished_parses = partial_parses[:]
+
+    while unfinished_parses:
+        minibatch = unfinished_parses[:batch_size]
+        transitions = model.predict(minibatch)
+
+        for pp, transition in zip(minibatch, transitions):
+            pp.parse_step(transition)
+
+        # Keep only parses that are not finished yet
+        unfinished_parses = [pp for pp in unfinished_parses if not (len(pp.stack) == 1 and len(pp.buffer) == 0)]
+
+    dependencies = [pp.dependencies for pp in partial_parses]
 
     ### END YOUR CODE
 
@@ -231,3 +267,5 @@ if __name__ == '__main__':
         test_minibatch_parse()
     else:
         raise Exception("You did not provide a valid keyword. Either provide 'part_c' or 'part_d', when executing this script")
+
+
