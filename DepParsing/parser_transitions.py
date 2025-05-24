@@ -38,7 +38,7 @@ class PartialParse(object):
         ###       reference the sentence object.  That is, remember to NOT modify the sentence object. 
 
         self.stack = [ROOT]
-        self.buffer = sentence[:]
+        self.buffer = sentence[:] # shallow copy of the sentence list
         self.dependencies = []
 
         ### END YOUR CODE
@@ -125,20 +125,27 @@ def minibatch_parse(sentences, model, batch_size):
     ###             to remove objects from the `unfinished_parses` list. This will free the underlying memory that
     ###             is being accessed by `partial_parses` and may cause your code to crash.
 
+    # Initialize partial parses as a list of PartialParses, one for each sentence in sentences
     partial_parses = [PartialParse(sentence) for sentence in sentences]
+
+    # Initialize unfinished parses as a shallow copy of partial parses
     unfinished_parses = partial_parses[:]
 
     while unfinished_parses:
+        # Take the first batch size parses in unfinished parses as a minibatch
         minibatch = unfinished_parses[:batch_size]
+
+        # Use the model to predict the next transition for each partial parse in the minibatch
         transitions = model.predict(minibatch)
 
-        for pp, transition in zip(minibatch, transitions):
-            pp.parse_step(transition)
+        # Perform a parse step on each partial parse in the minibatch with its predicted transition
+        for partial_parse, transition in zip(minibatch, transitions):
+            partial_parse.parse_step(transition)
 
         # Keep only parses that are not finished yet
-        unfinished_parses = [pp for pp in unfinished_parses if not (len(pp.stack) == 1 and len(pp.buffer) == 0)]
+        unfinished_parses = [partial_parse for partial_parse in unfinished_parses if not (len(partial_parse.stack) == 1 and len(partial_parse.buffer) == 0)]
 
-    dependencies = [pp.dependencies for pp in partial_parses]
+    dependencies = [partial_parse.dependencies for partial_parse in partial_parses]
 
     ### END YOUR CODE
 
