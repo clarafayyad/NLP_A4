@@ -117,8 +117,8 @@ class ParserModel(nn.Module):
         ###     View: https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
         ###     Flatten: https://pytorch.org/docs/stable/generated/torch.flatten.html
 
-        x = self.embeddings[w]  # Shape: (batch_size, n_features, embed_size)
-        x = x.view(x.size(0), -1)  # Flatten to (batch_size, n_features * embed_size)
+        x = self.embeddings[w]  # Look up embeddings, Shape: (batch_size, n_features, embed_size)
+        x = x.view(x.size(0), -1)  # Reshape: Flatten to (batch_size, n_features * embed_size)
 
         ### END YOUR CODE
         return x
@@ -155,10 +155,16 @@ class ParserModel(nn.Module):
         ###     Matrix product: https://pytorch.org/docs/stable/torch.html#torch.matmul
         ###     ReLU: https://pytorch.org/docs/stable/nn.html?highlight=relu#torch.nn.functional.relu
 
-        x = self.embedding_lookup(w)  # (batch_size, n_features * embed_size)
+        x = self.embedding_lookup(w)
+
+        # h = ReLU(xW + b1)
         h = torch.matmul(x, self.embed_to_hidden_weight) + self.embed_to_hidden_bias
         h_relu = torch.relu(h)
+
+        # Add dropout layer
         h_drop = self.dropout(h_relu)
+
+        # l = hU + b2
         logits = torch.matmul(h_drop, self.hidden_to_logits_weight) + self.hidden_to_logits_bias
 
         ### END YOUR CODE
